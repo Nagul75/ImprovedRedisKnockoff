@@ -86,23 +86,6 @@ void Socket::listen_for(const int backlog) const
     return Socket(connfd);
 }
 
-ssize_t Socket::read_data(std::vector<char>& buffer) const
-{
-    ssize_t n{read(m_fd, buffer.data(), buffer.size())};
-    if (n < 0)
-    {
-        std::cerr << "read() error: " << strerror(errno) << '\n';
-    }
-    return n;
-}
-
-void Socket::write_data(const std::string& message) const
-{
-    if (write(m_fd, message.c_str(), message.length()) < 0)
-    {
-        std::cerr << "write() error: " << strerror(errno) << '\n';
-    }
-}
 
 void Socket::connect_to(const std::string& ip_address,const uint16_t port) const
 {

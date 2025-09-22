@@ -36,8 +36,7 @@ public:
     [[nodiscard]] Socket accept_connection() const;
     void connect_to(const std::string& ip_address, uint16_t port) const;
 
-    ssize_t read_data(std::vector<char>& buffer) const;
-    void write_data(const std::string& message) const;
+
 
 private:
     int m_fd{-1};
