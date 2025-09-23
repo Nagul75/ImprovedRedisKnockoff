@@ -18,6 +18,8 @@
 class Socket
 {
 public:
+    static constexpr size_t K_MAX_MSG = 4096;
+
     Socket();
     explicit Socket(int);
     ~Socket();
@@ -36,7 +38,8 @@ public:
     [[nodiscard]] Socket accept_connection() const;
     void connect_to(const std::string& ip_address, uint16_t port) const;
 
-
+    void read_full(void *, size_t) const;
+    void write_all(const void *, size_t) const;
 
 private:
     int m_fd{-1};

@@ -3,6 +3,8 @@
 //
 
 #include "Socket.h"
+
+#include <cassert>
 #include <cstring>      // For strerror
 #include <cerrno>       // For errno
 
@@ -86,7 +88,6 @@ void Socket::listen_for(const int backlog) const
     return Socket(connfd);
 }
 
-
 void Socket::connect_to(const std::string& ip_address,const uint16_t port) const
 {
     struct sockaddr_in addr{};
@@ -104,6 +105,44 @@ void Socket::connect_to(const std::string& ip_address,const uint16_t port) const
         throw std::runtime_error("connect() failed: " + std::string(strerror(errno)));
     }
 }
+
+//buf is an out parameter
+void Socket::read_full(void* buf, size_t n) const
+{
+    char* p_buf {static_cast<char*>(buf)};
+    while (n > 0)
+    {
+        const ssize_t bytes_read{read(m_fd, p_buf, n)};
+        if (bytes_read <= 0)
+        {
+            throw std::runtime_error(bytes_read == 0 ? "EOF" : "read() error: " + std::string(strerror(errno)));
+        }
+
+        assert(static_cast<size_t>(bytes_read) <= n);  // assert whether bytes read is less than the total amount to be read.
+        n -= bytes_read;
+        p_buf += bytes_read;
+    }
+}
+
+void Socket::write_all(const void* buf, size_t n) const
+{
+    const char* p_buf {static_cast<const char*>(buf)};
+
+    while (n > 0)
+    {
+        const ssize_t bytes_written{write(m_fd, p_buf, n)};
+        if (bytes_written <= 0)
+        {
+            throw std::runtime_error("write() error " + std::string(strerror(errno)));
+        }
+
+        assert(static_cast<size_t>(bytes_written) <= n); // assert whether bytes written is less than the total amount.
+        n -= bytes_written;
+        p_buf += bytes_written;
+    }
+}
+
+
 
 
 
