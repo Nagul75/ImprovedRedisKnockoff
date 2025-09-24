@@ -116,6 +116,9 @@ ssize_t NW::Socket::read_full(std::vector<char>& buf)
         }
         throw std::runtime_error("read() error: " + std::string(strerror(errno)));
     }
+    if (n == 0) {
+        return -1; // Return -1 ONLY for "client disconnected" (EOF)
+    }
     return n;
 }
 
