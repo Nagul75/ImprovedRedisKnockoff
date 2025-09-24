@@ -33,6 +33,8 @@ namespace NW
         Socket(Socket&&) noexcept;
         Socket& operator=(Socket&& other) noexcept;
 
+        [[nodiscard]] int get_fd() const {return m_fd;}
+
         void set_reuse_addr();
         void bind_to(uint16_t);
         void listen_for(int backlog = SOMAXCONN);
