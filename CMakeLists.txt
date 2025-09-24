@@ -3,10 +3,40 @@ project(RedisKnockoff)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_library(network_lib
+        Socket.h
+        Socket.cpp
+        Connection.h
+        Connection.cpp
+)
+
+target_include_directories(network_lib PUBLIC .)
+
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/50b8600c63c5487e901e2845a0f64d384a65f75d.zip
+)
+
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(run_tests
+        Tests/testConnection.cpp
+)
+
+target_link_libraries(run_tests PRIVATE
+        network_lib
+        GTest::gtest
+        GTest::gtest_main
+)
 add_executable(RedisKnockoff
         main.cpp
         Socket.cpp
         Socket.h
         server.cpp
         client.cpp
+        Connection.h
+        Connection.cpp
 )
