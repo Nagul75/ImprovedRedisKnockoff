@@ -14,36 +14,38 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-
-class Socket
+namespace NW
 {
-public:
-    static constexpr size_t K_MAX_MSG = 4096;
+    class Socket
+    {
+    public:
+        static constexpr size_t K_MAX_MSG = 4096;
 
-    Socket();
-    explicit Socket(int);
-    ~Socket();
+        Socket();
+        explicit Socket(int);
+        ~Socket();
 
-    // Disable copying
-    Socket(const Socket&) = delete;
-    Socket& operator=(const Socket&) = delete;
+        // Disable copying
+        Socket(const Socket&) = delete;
+        Socket& operator=(const Socket&) = delete;
 
-    // Enable moving
-    Socket(Socket&&) noexcept;
-    Socket& operator=(Socket&& other) noexcept;
+        // Enable moving
+        Socket(Socket&&) noexcept;
+        Socket& operator=(Socket&& other) noexcept;
 
-    void set_reuse_addr();
-    void bind_to(uint16_t);
-    void listen_for(int backlog = SOMAXCONN);
-    [[nodiscard]] Socket accept_connection();
-    void connect_to(const std::string& ip_address, uint16_t port);
+        void set_reuse_addr();
+        void bind_to(uint16_t);
+        void listen_for(int backlog = SOMAXCONN);
+        [[nodiscard]] Socket accept_connection();
+        void connect_to(const std::string& ip_address, uint16_t port);
 
-    ssize_t read_full(std::vector<char>& buf);
-    ssize_t write_all(const std::vector<char>& buf);
+        ssize_t read_full(std::vector<char>& buf);
+        ssize_t write_all(const std::vector<char>& buf);
 
-private:
-    int m_fd{-1};
-};
+    private:
+        int m_fd{-1};
+    };
+}
 
 
 #endif //IMPROVEDREDISKNOCKOFF_SOCKET_H
