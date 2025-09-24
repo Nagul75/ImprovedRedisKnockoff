@@ -32,14 +32,14 @@ public:
     Socket(Socket&&) noexcept;
     Socket& operator=(Socket&& other) noexcept;
 
-    void set_reuse_addr() const;
-    void bind_to(uint16_t) const;
-    void listen_for(int backlog = SOMAXCONN) const;
-    [[nodiscard]] Socket accept_connection() const;
-    void connect_to(const std::string& ip_address, uint16_t port) const;
+    void set_reuse_addr();
+    void bind_to(uint16_t);
+    void listen_for(int backlog = SOMAXCONN);
+    [[nodiscard]] Socket accept_connection();
+    void connect_to(const std::string& ip_address, uint16_t port);
 
-    void read_full(void *, size_t) const;
-    void write_all(const void *, size_t) const;
+    ssize_t read_full(std::vector<char>& buf);
+    ssize_t write_all(const std::vector<char>& buf);
 
 private:
     int m_fd{-1};

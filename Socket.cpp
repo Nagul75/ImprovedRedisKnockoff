@@ -48,7 +48,7 @@ Socket& Socket::operator=(Socket&& other) noexcept
     return *this;
 }
 
-void Socket::set_reuse_addr() const
+void Socket::set_reuse_addr()
 {
     const int val{1};
     if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0)
@@ -57,7 +57,7 @@ void Socket::set_reuse_addr() const
     }
 }
 
-void Socket::bind_to(const uint16_t port) const
+void Socket::bind_to(const uint16_t port)
 {
     struct sockaddr_in addr{};
     addr.sin_family = AF_INET;
@@ -70,7 +70,7 @@ void Socket::bind_to(const uint16_t port) const
     }
 }
 
-void Socket::listen_for(const int backlog) const
+void Socket::listen_for(const int backlog)
 {
     if (listen(m_fd, backlog) < 0)
     {
@@ -78,7 +78,7 @@ void Socket::listen_for(const int backlog) const
     }
 }
 
-[[nodiscard]] Socket Socket::accept_connection() const
+[[nodiscard]] Socket Socket::accept_connection()
 {
     const int connfd{accept(m_fd, nullptr, nullptr)};
     if (connfd < 0)
@@ -88,7 +88,7 @@ void Socket::listen_for(const int backlog) const
     return Socket(connfd);
 }
 
-void Socket::connect_to(const std::string& ip_address,const uint16_t port) const
+void Socket::connect_to(const std::string& ip_address,const uint16_t port)
 {
     struct sockaddr_in addr{};
     addr.sin_family = AF_INET;
@@ -107,39 +107,28 @@ void Socket::connect_to(const std::string& ip_address,const uint16_t port) const
 }
 
 //buf is an out parameter
-void Socket::read_full(void* buf, size_t n) const
+ssize_t Socket::read_full(std::vector<char>& buf)
 {
-    char* p_buf {static_cast<char*>(buf)};
-    while (n > 0)
-    {
-        const ssize_t bytes_read{read(m_fd, p_buf, n)};
-        if (bytes_read <= 0)
-        {
-            throw std::runtime_error(bytes_read == 0 ? "EOF" : "read() error: " + std::string(strerror(errno)));
+    const ssize_t n{read(m_fd, buf.data(), buf.size())};
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 0; // Return 0 to indicate no data was read, but connection is fine.
         }
-
-        assert(static_cast<size_t>(bytes_read) <= n);  // assert whether bytes read is less than the total amount to be read.
-        n -= bytes_read;
-        p_buf += bytes_read;
+        throw std::runtime_error("read() error: " + std::string(strerror(errno)));
     }
+    return n;
 }
 
-void Socket::write_all(const void* buf, size_t n) const
+ssize_t Socket::write_all(const std::vector<char>& buf)
 {
-    const char* p_buf {static_cast<const char*>(buf)};
-
-    while (n > 0)
-    {
-        const ssize_t bytes_written{write(m_fd, p_buf, n)};
-        if (bytes_written <= 0)
-        {
-            throw std::runtime_error("write() error " + std::string(strerror(errno)));
+    const ssize_t n{write(m_fd, buf.data(), buf.size())};
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 0; // Return 0 to indicate no data was read, but connection is fine.
         }
-
-        assert(static_cast<size_t>(bytes_written) <= n); // assert whether bytes written is less than the total amount.
-        n -= bytes_written;
-        p_buf += bytes_written;
+        throw std::runtime_error("read() error: " + std::string(strerror(errno)));
     }
+    return n;
 }
 
 
