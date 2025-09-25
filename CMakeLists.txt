@@ -8,6 +8,8 @@ add_library(network_lib
         Socket.cpp
         Connection.h
         Connection.cpp
+        Epoll.h
+        Epoll.cpp
 )
 
 target_include_directories(network_lib PUBLIC .)
@@ -23,7 +25,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(run_tests
-        Tests/testConnection.cpp
+        Tests/testEpoll.cpp
 )
 
 target_link_libraries(run_tests PRIVATE

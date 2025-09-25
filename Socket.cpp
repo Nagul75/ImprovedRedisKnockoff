@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstring>      // For strerror
 #include <cerrno>       // For errno
+#include <fcntl.h>
 
 NW::Socket::Socket()
 {
@@ -133,6 +134,22 @@ ssize_t NW::Socket::write_all(const std::vector<char>& buf)
     }
     return n;
 }
+
+void NW::Socket::set_non_blocking()
+{
+    int flags{fcntl(m_fd, F_GETFL, 0)};
+    if (flags == -1)
+    {
+        throw std::runtime_error("Socket::set_non_blocking() - fcntl(F_GETFL) error: " + std::string(strerror(errno)));
+    }
+
+    flags |= O_NONBLOCK;
+
+    if (fcntl(m_fd, F_SETFL, flags) == -1) {
+        throw std::runtime_error("Socket::set_non_blocking() - fcntl(F_SETFL) failed: " + std::string(strerror(errno)));
+    }
+}
+
 
 
 
