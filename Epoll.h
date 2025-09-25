@@ -22,9 +22,9 @@ namespace NW
         Epoll(const Epoll&) = delete;
         Epoll& operator=(const Epoll&) = delete;
 
-        void add(const NW::Socket& socket, void* user_data, const uint32_t events);
-        void modify(NW::Socket& socket, void* user_data, uint32_t events);
-        void remove(NW::Socket& socket);
+        void add(const NW::Socket& socket, void* user_data, uint32_t events);
+        void modify(const NW::Socket& socket, void* user_data, uint32_t events);
+        void remove(const NW::Socket& socket);
         int wait(std::vector<struct epoll_event>& events, int timeout_ms = -1);
 
     private:
