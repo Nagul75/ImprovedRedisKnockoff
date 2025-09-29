@@ -107,8 +107,7 @@ void NW::Socket::connect_to(const std::string& ip_address,const uint16_t port)
     }
 }
 
-//buf is an out parameter
-ssize_t NW::Socket::read_full(std::vector<char>& buf)
+ssize_t NW::Socket::read_data(std::vector<char>& buf)
 {
     const ssize_t n{read(m_fd, buf.data(), buf.size())};
     if (n < 0) {
@@ -123,14 +122,14 @@ ssize_t NW::Socket::read_full(std::vector<char>& buf)
     return n;
 }
 
-ssize_t NW::Socket::write_all(const std::vector<char>& buf)
+ssize_t NW::Socket::write_data(const std::vector<char>& buf)
 {
     const ssize_t n{write(m_fd, buf.data(), buf.size())};
     if (n < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return 0; // Return 0 to indicate no data was read, but connection is fine.
         }
-        throw std::runtime_error("read() error: " + std::string(strerror(errno)));
+        throw std::runtime_error("write() error: " + std::string(strerror(errno)));
     }
     return n;
 }
@@ -149,6 +148,37 @@ void NW::Socket::set_non_blocking()
         throw std::runtime_error("Socket::set_non_blocking() - fcntl(F_SETFL) failed: " + std::string(strerror(errno)));
     }
 }
+
+void NW::Socket::read_all(void *buf, size_t n)
+{
+    char* p_buf{static_cast<char*>(buf)};
+    while (n > 0)
+    {
+        ssize_t bytes_read{read(m_fd, p_buf, n)};
+        if (bytes_read <= 0)
+        {
+            throw std::runtime_error(bytes_read == 0 ? "EOF" : "Socket::read_all() read() error \n");
+        }
+        n -= bytes_read;
+        p_buf += bytes_read;
+    }
+}
+
+void NW::Socket::write_all(const void* buf, size_t n)
+{
+    const char* p_buf{static_cast<const char*>(buf)};
+    while (n > 0)
+    {
+        ssize_t bytes_written{write(m_fd, buf, n)};
+        if (bytes_written <= 0)
+        {
+            throw std::runtime_error("Socket::write_all() write() error");
+        }
+        n -= bytes_written;
+        p_buf += bytes_written;
+    }
+}
+
 
 
 

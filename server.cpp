@@ -1,82 +1,77 @@
-//
-// Created by regal on 9/22/25.
-//
-
 #include "Socket.h"
+#include "Epoll.h"
+#include "Connection.h"
 
-bool handle_one_request(const Socket& client_socket)
-{
-    try
-    {
-        // read the first 4 header bytes
-        uint32_t len;
-        client_socket.read_full(&len, sizeof(len));
-
-        if (len > Socket::K_MAX_MSG)
-        {
-            std::cerr << "Message is too long! \n";
-            return false; // terminate connection
-        }
-        std::vector<char>body_buf(len);
-        client_socket.read_full(body_buf.data(), len);
-
-        std::cout << "Client says: " << std::string(body_buf.begin(), body_buf.end()) << '\n';
-
-        // response
-        const std::string response{"Moshi Moshi!!! This is the server ^^! How are you?!"};
-        const uint32_t reply_length{static_cast<uint32_t>(response.length())};
-
-        client_socket.write_all(&reply_length, sizeof(reply_length));
-        client_socket.write_all(response.c_str(), response.length());
-
-        return true;
-    }
-    catch (const std::runtime_error& e)
-    {
-        std::cerr << "Connection error: " << e.what() << '\n';
-        return false;
-    }
-
-}
-
-void handleClient(Socket client_socket)
-{
-    std::cout << "Handling new client connection ... \n";
-    while (handle_one_request(client_socket))
-    {
-        // continue serving requests
-    }
-
-    std::cout << "Closing client! \n";
-}
-
+#include <map>
+#include <iostream>
+#include <memory>
 
 int main()
 {
     try
     {
-        const Socket listening_socket{};
+        // Setup listening socket
+        NW::Socket listening_socket{};
         listening_socket.set_reuse_addr();
-        listening_socket.bind_to(1234);
+        listening_socket.bind_to(8000);
         listening_socket.listen_for();
+        listening_socket.set_non_blocking();
 
-        std::cout << "Server Listening on port 1234 ..." << '\n';
+        NW::Epoll epoll{};
+        epoll.add(listening_socket, &listening_socket, EPOLLIN);
+        std::cout << "Server listening on port 8000... \n";
 
+        // managing connections via data structures
+        std::vector<struct epoll_event> events{16};
+        std::map<int, std::unique_ptr<NW::Connection>> connections{};
+
+        // event loop
         while (true)
         {
-            try
+            const int n_ready{epoll.wait(events)};
+
+            for (int i{}; i < n_ready; ++i)
             {
-                Socket client_socket{listening_socket.accept_connection()};
-                handleClient(std::move(client_socket));
-            } catch (const std::runtime_error& e)
-            {
-                std::cerr << "Error accepting connection: " <<  e.what() << '\n';
+                if (events[i].data.ptr == &listening_socket)    // handle new connection
+                {
+                    NW::Socket client_socket{listening_socket.accept_connection()};
+                    client_socket.set_non_blocking();
+                    int client_fd{client_socket.get_fd()};
+
+                    auto conn{std::make_unique<NW::Connection>(std::move(client_socket))};
+                    epoll.add(conn->get_socket(), conn.get(), EPOLLIN);
+                    connections[client_fd] = std::move(conn);
+                }
+                else    // handles existing connections
+                {
+                    auto conn{static_cast<NW::Connection*>(events[i].data.ptr)};
+                    if (events[i].events & EPOLLIN)
+                    {
+                        conn->handle_read();
+                    }
+                    else if (events[i].events & EPOLLOUT)
+                    {
+                        conn->handle_write();
+                    }
+
+                    // update state after handling events
+                    if (conn->get_should_close() || (events[i].events & EPOLLERR))
+                    {
+                        epoll.remove(conn->get_socket());
+                    }
+                    else if (conn->has_data_to_write())
+                    {
+                        epoll.modify(conn->get_socket(), conn, EPOLLIN | EPOLLOUT);
+                    }
+                    else
+                    {
+                        epoll.modify(conn->get_socket(), conn, EPOLLIN);
+                    }
+                }
             }
         }
-    }catch (const std::runtime_error& e)
+    }catch (std::runtime_error& e)
     {
         std::cerr << "Fatal server error: " << e.what() << '\n';
-        return 1;
     }
-    return 0;
 }

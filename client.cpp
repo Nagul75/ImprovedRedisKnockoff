@@ -1,73 +1,60 @@
-//
-// Created by regal on 9/22/25.
-//
-
 #include "Socket.h"
-#include <iostream>
+#include <cstring>
 
-bool handle_one_request(const Socket& client_socket, const std::string& message)
+void send_request(NW::Socket& socket, const std::string& text)
 {
-    try
+    auto len{static_cast<uint32_t>(text.length())};
+    if (len > NW::Socket::K_MAX_MSG)
     {
-        // WRITE OPERATION
-        const uint32_t message_length{static_cast<uint32_t>(message.length())};
-        client_socket.write_all(&message_length, sizeof(message_length)); // write the length of the message first (header)
-        client_socket.write_all(message.c_str(), message.length()); // write the actual message now
-        std::cout << "Message sent \n";
-
-        // READ OPERATION
-        // read the first 4 header bytes
-        uint32_t len;
-        client_socket.read_full(&len, sizeof(len));
-        // read the message based on the length first read
-        std::vector<char> buffer(len);
-        client_socket.read_full(buffer.data(), len);
-        std::cout << "Server says: " << std::string(buffer.begin(), buffer.end()) << '\n';
-
-        return true;
+        throw std::runtime_error("Message is too long! \n");
     }
-    catch (const std::runtime_error& e)
+
+    socket.write_all(&len, sizeof(len));
+    socket.write_all(text.data(), text.size());
+}
+
+std::string read_response(NW::Socket& socket)
+{
+    uint32_t len{};
+    socket.read_all(&len, sizeof(len));
+    if (len > NW::Socket::K_MAX_MSG)
     {
-        std::cerr << "Connection error: " << e.what() << '\n';
-        return false;
+        throw std::runtime_error("Response is too long! \n");
     }
+    std::vector<char> response_buf(len);
+    socket.read_all(response_buf.data(), len);
+
+    return std::string(response_buf.begin(), response_buf.end());
 }
 
 int main()
 {
     try
     {
-        Socket client_socket{};
-        std::cout << "Connecting to server ... \n";
-
-        client_socket.connect_to("127.0.0.1", 1234);
-
-        std::cout << "Connected successfully! \n";
-
-        if (!handle_one_request(client_socket, "First message"))
-        {
-            std::cout << "Exchange unsuccessful! \n";
-            return 1;
+        NW::Socket client{};
+        std::cout << "Connecting to port 8000 ... \n";
+        client.connect_to("127.0.0.1", 8000);
+        std::cout << "Connected! \n";
+        std::vector<std::string> query_list = {
+            "hello",
+            "world",
+            "this is a test"
+        };
+        std::cout << "Sending " << query_list.size() << " messages...\n";
+        for (const std::string& query : query_list) {
+            send_request(client, query);
         }
-        std::cout << "Exchange successful! \n";
-        if (!handle_one_request(client_socket, "Second message"))
-        {
-            std::cout << "Exchange unsuccessful! \n";
-            return 1;
+
+        std::cout << "Reading responses...\n";
+        for (size_t i = 0; i < query_list.size(); ++i) {
+            std::string response = read_response(client);
+            std::cout << "  Server replied: \"" << response << "\"\n";
         }
-        std::cout << "Exchange successful! \n";
-        if (!handle_one_request(client_socket, "Second message"))
-        {
-            std::cout << "Exchange unsuccessful! \n";
-            return 1;
-        }
-        std::cout << "Exchange successful! \n";
-        return 0;
+
     }
-    catch (const std::runtime_error& e)
+    catch (std::runtime_error& e)
     {
-        // This will now catch connection errors too
-        std::cerr << "Client error: " << e.what() << '\n';
+        std::cout << "Client error: " << e.what() << '\n';
         return 1;
     }
 }
