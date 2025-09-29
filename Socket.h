@@ -42,8 +42,8 @@ namespace NW
         [[nodiscard]] Socket accept_connection();
         void connect_to(const std::string& ip_address, uint16_t port);
 
-        ssize_t read_full(std::vector<char>& buf);
-        ssize_t write_all(const std::vector<char>& buf);
+        ssize_t read_data(std::vector<char>& buf);
+        ssize_t write_data(const std::vector<char>& buf);
 
     private:
         int m_fd{-1};
