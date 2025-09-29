@@ -20,7 +20,7 @@ void NW::Connection::handle_read()
 
         while (true)
         {
-            const ssize_t bytes_read{m_socket.read_full(temp_buf)};
+            const ssize_t bytes_read{m_socket.read_data(temp_buf)};
             if (bytes_read > 0)
             {
                 // Append newly read data to Connection's read buffer
@@ -52,7 +52,7 @@ void NW::Connection::handle_write()
     {
         while (!m_write_buffer.empty())
         {
-            const ssize_t bytes_written{m_socket.write_all(m_write_buffer)};
+            const ssize_t bytes_written{m_socket.write_data(m_write_buffer)};
             if (bytes_written > 0)
             {
                 // if data written, remove it from front of the buffer.
@@ -100,12 +100,8 @@ void NW::Connection::process_request()
             break;
         }
 
-        // Now we have a complete request.
-        std::cout << "Client (fd=" << m_socket.get_fd() << ") says: "
-                  << std::string(m_read_buffer.begin() + 4, m_read_buffer.begin() + len + 4) << '\n';
-
         // Create and buffer the response
-        const std::string response{"Hello! Hello! This is the server ^^! <3"};
+        const std::string response{"Client said: " + std::string(m_read_buffer.begin() + 4, m_read_buffer.begin() + len + 4 + '\n')};
         uint32_t response_len{static_cast<uint32_t>(response.length())};
 
         // Append header to write buffer
