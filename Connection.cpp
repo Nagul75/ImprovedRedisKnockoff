@@ -101,7 +101,7 @@ void NW::Connection::process_request()
         }
 
         // Create and buffer the response
-        const std::string response{"Client said: " + std::string(m_read_buffer.begin() + 4, m_read_buffer.begin() + len + 4 + '\n')};
+        const std::string response{"Client said: " + std::string(m_read_buffer.begin() + 4, m_read_buffer.begin() + len + 4)};
         uint32_t response_len{static_cast<uint32_t>(response.length())};
 
         // Append header to write buffer
