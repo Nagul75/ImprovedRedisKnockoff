@@ -44,6 +44,10 @@ namespace NW
 
         ssize_t read_data(std::vector<char>& buf);
         ssize_t write_data(const std::vector<char>& buf);
+        void read_all(void *buf, size_t n);
+        void write_all(const void *buf, size_t n);
+
+
 
     private:
         int m_fd{-1};

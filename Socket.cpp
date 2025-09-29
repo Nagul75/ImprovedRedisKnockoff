@@ -149,6 +149,37 @@ void NW::Socket::set_non_blocking()
     }
 }
 
+void NW::Socket::read_all(void *buf, size_t n)
+{
+    char* p_buf{static_cast<char*>(buf)};
+    while (n > 0)
+    {
+        ssize_t bytes_read{read(m_fd, p_buf, n)};
+        if (bytes_read <= 0)
+        {
+            throw std::runtime_error(bytes_read == 0 ? "EOF" : "Socket::read_all() read() error \n");
+        }
+        n -= bytes_read;
+        p_buf += bytes_read;
+    }
+}
+
+void NW::Socket::write_all(const void* buf, size_t n)
+{
+    const char* p_buf{static_cast<const char*>(buf)};
+    while (n > 0)
+    {
+        ssize_t bytes_written{write(m_fd, buf, n)};
+        if (bytes_written <= 0)
+        {
+            throw std::runtime_error("Socket::write_all() write() error");
+        }
+        n -= bytes_written;
+        p_buf += bytes_written;
+    }
+}
+
+
 
 
 
