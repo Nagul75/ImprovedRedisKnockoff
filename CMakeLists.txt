@@ -33,12 +33,27 @@ target_link_libraries(run_tests PRIVATE
         GTest::gtest
         GTest::gtest_main
 )
+
 add_executable(RedisKnockoff
         main.cpp
-        Socket.cpp
-        Socket.h
+)
+
+target_link_libraries(RedisKnockoff PRIVATE
+        network_lib 
+)
+
+add_executable(RedisServer
         server.cpp
+)
+
+target_link_libraries(RedisServer
+        network_lib
+)
+
+add_executable(RedisClient
         client.cpp
-        Connection.h
-        Connection.cpp
+)
+
+target_link_libraries(RedisClient
+        network_lib
 )
